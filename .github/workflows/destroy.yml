@@ -1,0 +1,47 @@
+# .github/workflows/destroy.yml
+
+name: Destroy Pulumi Stack (Manual) # Name shown in GitHub Actions
+
+on:
+  workflow_dispatch: # Allows manual triggering ONLY
+
+jobs:
+  destroy: # Job ID
+    name: Destroy Pulumi Stack # Job name shown in GitHub Actions
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js environment (version 18)
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Step 3: Install dependencies using npm ci
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: ./ppinfra # IMPORTANT: Your Pulumi code folder name
+
+      # Step 4: Configure AWS Credentials using GitHub Secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # IMPORTANT: Ensure this matches the region you configured
+
+      # Step 5: Run 'pulumi destroy'
+      - name: Run Pulumi Destroy
+        uses: pulumi/actions@v5
+        with:
+          command: destroy # The Pulumi command to run (remove resources)
+          stack-name: Indumathi1/myworkshop/dev # IMPORTANT: Your Pulumi User/Project/Stack name
+          work-dir: ./ppinfra # IMPORTANT: Your Pulumi code folder name
+          # No 'args: --yes' needed here, the action runs non-interactively by default
+        env:
+          # Pass the Pulumi access token
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          # AWS credentials picked up from environment
